@@ -1,0 +1,125 @@
+<head><title>API TEST</title></head>
+<style>
+body{
+background-color: #979797;
+}
+*{
+color: black;
+outline: none !important;
+text-align: center;
+font-family: Arial, Helvetica, sans-serif;
+}
+
+select{
+border: none;
+color: black;
+text-align: center;
+}
+
+button{
+background-color: rgb(0, 235, 0);
+border-radius: 10px;
+border:none;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 10px;
+padding-right: 10px;
+}
+
+button:active{
+background-color: green;
+}
+
+input, select{
+    background-color: rgb(255, 255, 255);
+border-radius: 10px;
+border:none;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 10px;
+padding-right: 10px;
+}
+
+</style>
+<h1>REST API TESTER</h1>
+<h2>Request</h2>
+<select id="sel"><optgroup label="BASIC"><option>GET</option> <option>POST</option> <option>PUT</option> <option>PATCH</option> <option>DELETE</option> </optgroup> <optgroup label="CUSTOM" id="customgr"> <option>New</option></optgroup> </select>
+<input id="url" style="width: 30%; resize: horizontal;" placeholder="https://api.example.com/endpoint" type="text"> <button id="b">Send</button>
+<br><br>
+
+<Br>
+<h2>Request Options</h2>
+<div style="font-family: monospace;" id="opt">LOADING...</div><br>
+<code style="font-size: x-small;font-family: monospace;cursor: pointer;" onclick="force_reload_options()" >force reload options</code> 
+<br>
+<h3>Create/Modify Option</h3>
+<div>  <input type="text"  id="cN" placeholder="name"> <input type="text" id="cV" placeholder="value"> <button id="cB">Submit</button></div>
+<br>
+<h2>Request Result</h2>
+<label>Status: <code  id="status" style="font-family: monospace;">unknown</code></label> | 
+<label>Status Text: <code  id="statusT" style="font-family: monospace;">unknown</code></label> | 
+<label>OK: <code  id="ok" style="font-family: monospace;">unknown</code></label>
+| 
+<label>Redirected: <code  id="redir" style="font-family: monospace;">unknown</code></label>
+| 
+<label>Type: <code  id="type" style="font-family: monospace;">unknown</code></label>
+<br><Br>
+    Headers:
+    <div style="font-family: monospace;" id="headers"></div><br>
+
+Body:
+<div style="font-family: monospace;" id="body"></div><br>
+
+
+
+<script defer>
+
+    let options = {method: "GET"}
+
+document.getElementById('sel').onchange = () => {
+if(document.getElementById('sel').value == "New"){
+const newopt = document.createElement("option")
+newopt.innerHTML = prompt("Request type", "GET")
+document.getElementById('customgr').appendChild(newopt)
+document.getElementById('sel').value = newopt.value
+}
+    options.method = document.getElementById('sel').value
+}
+
+
+document.getElementById('cB').onclick = () => {
+options[document.getElementById('cN').value] = document.getElementById('cV').value
+}
+
+document.getElementById('b').onclick = () => {
+fetch(document.getElementById('url').value,options).then(d => {
+document.getElementById('status').innerHTML = d.status
+document.getElementById('ok').innerHTML = d.ok
+document.getElementById('statusT').innerHTML = d.statusText ? d.statusText : 'none'
+document.getElementById('headers').innerHTML = JSON.stringify(d.headers)
+document.getElementById('redir').innerHTML = d.redirected
+document.getElementById('type').innerHTML = d.type
+d.json().then(body => {
+document.getElementById('body').innerHTML = JSON.stringify(body)
+})
+}).catch(e => {
+alert(`${e} - Check console for more.`)
+})
+}
+
+
+const reqOpt = () => {
+    document.getElementById('opt').innerHTML =  (JSON.stringify(options))
+}
+
+
+setInterval(reqOpt, 500)
+
+
+const force_reload_options = () => {
+reqOpt()
+
+}
+
+reqOpt()
+</script>
