@@ -1,0 +1,187 @@
+<head>
+  <style>*{overflow: scroll !important; font-family: Arial, Helvetica, sans-serif;}
+  body{background-color: #979797;}
+  button, input{
+  border-radius: 10px;
+  border: 1px solid black;
+  padding-left: 15px;
+  padding-right: 15px;
+  margin-left: 10px;
+  margin-right: 10px;
+  outline: none;
+  background-color: #e7e7e7;
+}
+  </style>
+  <script src='https://unpkg.com/tesseract.js@v2.0.0-alpha.13/dist/tesseract.min.js'></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/webfont/1/webfont.js"></script>
+  <script src="http://code.jquery.com/jquery-1.10.2.js"></script>
+</head>
+<div style="z-index: 5; position: fixed; width: 100%; height:120vh;
+text-align: center; background: none;">
+<div style="position: fixed; width: 100%;
+top: 50%;
+left: 50%;
+-ms-transform: translate(-50%, -50%);
+transform: translate(-50%, -50%);">
+<h1>Quadratic Solver</h1>
+<h3><i>a</i>x<sup>2</sup>+<i>b</i>x+<i>c</i>=0</h3>
+A: <input id="a" placeholder="a"> B: <input placeholder="b" id="b"> C: <input placeholder="c" id="c">
+<br><br>
+<input style="display: none;" type="file" accept="image/*" id="img">
+<label style="z-index: 100;" id="up" for="img">Click to upload image </label>
+<button onclick="c()">Get Numbers from Image</button>
+<br>
+<details style="cursor: default;" id="lg">
+  <summary>Image Log</summary>
+  <div id="log"></div>
+</details>
+
+<br><br>
+<button onclick="s()" >Sovle</button> <button onclick="localStorage.clear();location.reload()">Clear</button>
+<br><br>
+<label>Roots: </label><label id="roots">unknown</label>
+</div>
+</div>
+
+
+
+<script>
+  const regex = /\d+\.\d+|\d+\b|\d+(?=\w)/g
+    class Quadratic {
+    
+    a = 0
+    b = 0
+    c = 0
+    
+    constructor(a = 1, b = -12, c = 32) {
+      if (a == 0) {
+        throw new Error("a cannot be 0")
+      }
+      this.a = a
+      this.b = b
+      this.c = c
+    }
+    
+    getDiscriminant() {
+      return (this.b ** 2 - (4 * this.a * this.c))
+    }
+    
+    solve() {
+    
+      if (this.getDiscriminant() < 0) {
+        return NaN
+      }
+      const root1 = ((-this.b + Math.sqrt(this.getDiscriminant())) / 2 * this.a)
+      const root2 = ((-this.b - Math.sqrt(this.getDiscriminant())) / 2 * this.a)
+    
+    
+      return [root1, root2]
+    
+    }
+    }
+    
+    document.getElementById("img").onchange = () => {
+    document.getElementById('up').innerHTML = `Getting from ${document.getElementById("img").files[0].name.length <= 10 ? document.getElementById("img").files[0].name : document.getElementById("img").files[0].name.substring(0,10) + '...'  }`
+    }
+
+    const s = () => {
+      if(document.getElementById('a').value == 0) { return alert("a cannot be 0") }
+       const roots = new Quadratic(document.getElementById('a').value,document.getElementById('b').value,document.getElementById('c').value).solve()
+       document.getElementById('roots').innerHTML = roots
+        localStorage.setItem('a',document.getElementById('a').value)
+        localStorage.setItem('b',document.getElementById('b').value)
+        localStorage.setItem('c',document.getElementById('c').value)
+        localStorage.setItem('c',document.getElementById('c').value)
+        localStorage.setItem("r",roots)
+    }
+
+
+    const c = (img) => {
+      if(!document.getElementById('img').files[0] && !img) { alert("No image!"); return }
+      if(!img) { img = document.getElementById('img').files[0] }
+      const worker = new Tesseract.TesseractWorker()
+worker.recognize(img, "eng")
+.progress((packet) => {
+    progressUpdate(packet)
+})
+.then((data) => {
+    progressUpdate({ status: 'done', data: data })
+})
+    }
+    const progressUpdate = (packet) => {
+    var log = document.getElementById('log');
+ 
+    if(log.firstChild && log.firstChild.status === packet.status){
+   /*     if('progress' in packet){
+            var progress = log.firstChild.querySelector('progress')
+           progress.value = packet.progress
+        }*/
+    }else{
+        var line = document.createElement('div');
+        line.status = packet.status;
+        var status = document.createElement('div')
+        status.className = 'status'
+        status.appendChild(document.createTextNode(packet.status))
+        line.appendChild(status)
+ 
+        if('progress' in packet){
+       //     var progress = document.createElement('progress')
+         //   progress.value = packet.progress
+          //  progress.max = 1
+          //  line.appendChild(progress)
+        }
+ 
+ 
+        if(packet.status == 'done'){
+          var line = document.createElement('div');
+        line.status = packet.status;
+        var status = document.createElement('div')
+        status.className = 'status'
+        line.appendChild(status)
+  const n = getNums(packet.data.text)
+  if(n != null){
+    status.appendChild(document.createTextNode(`Done. Found ${packet.data.text ? packet.data.text : ''}`))
+  setABC(n[0] ? n[0] : 0, n[2] ? n[2] : 0, n[3] ? n[3] : 0)
+  }else{
+    status.appendChild(document.createTextNode(`Done. No numbers found. Found ${packet.data.text ? packet.data.text : 'nothing'} instead`))
+  }
+        }
+ 
+        log.insertBefore(line, log.firstChild)
+    }
+}
+
+const getNums = (str) => {
+return str.match(regex) ? str.match(regex).map((n) => {return n}) : null
+}
+
+const setABC = (a,b,c) => {
+  document.getElementById('a').value = a
+  document.getElementById('b').value = b
+  document.getElementById('c').value = c
+}
+
+document.getElementById("lg").oncontextmenu = (evnt) => {
+evnt.preventDefault()
+if(!window.confirm) { 
+  while (document.getElementById("log").firstChild) {
+    document.getElementById("log").removeChild(document.getElementById("log").firstChild)
+    }
+    return
+ }
+if(confirm("Clear log?")) { 
+  while (document.getElementById("log").firstChild) {
+    document.getElementById("log").removeChild(document.getElementById("log").firstChild)
+    }
+ }
+}
+
+document.getElementById("lg").onclick = () => {
+document.getElementById("lg").open = false
+}
+
+localStorage.getItem("a") ? document.getElementById('a').value = localStorage.getItem("a") : null
+    localStorage.getItem("b") ? document.getElementById('b').value = localStorage.getItem("b") : null
+    localStorage.getItem("c") ? document.getElementById('c').value = localStorage.getItem("c") : null
+    localStorage.getItem("r") ? document.getElementById('roots').innerHTML = localStorage.getItem("r") : null
+    </script>

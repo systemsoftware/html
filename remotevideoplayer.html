@@ -1,0 +1,210 @@
+<head>
+<title>Remote Video Player</title>
+</head>
+<style>
+*{
+font-family: Arial, Helvetica, sans-serif;
+outline: none;
+}
+
+
+.err {
+  border: 2px dashed #f65555;
+  width: 70%;
+  text-align: center;
+  margin: auto;
+  padding: 50px;
+}
+
+body{
+background-color: #979797;
+}
+.c{
+    position: fixed;
+    bottom: 20;
+    width: 100%;
+    text-align: center;
+}
+
+#v{
+    display: block;
+  margin: auto;
+  width: 70%;
+  border-radius: 10px;
+}
+button{
+outline: none;
+border-radius: 10px;
+border: none;
+padding-top: 5px;
+padding-left: 10px;
+padding-bottom: 5px;
+padding-right: 10px;
+margin-left: 10px;
+}
+#r{
+width: 55%;
+}
+
+select{
+background:none;
+border: none;
+outline: none;
+}
+
+.ctrl{
+background-color: gainsboro;
+width: fit-content;
+margin: auto;
+padding: 5px;
+padding-left: 10px;
+padding-right: 10px;
+border-radius: 10px;
+}
+
+</style>
+
+<div id="c" style="z-index: 5; position: fixed; width: 100%; height:120vh;
+text-align: center; background: none; display: none;">
+<div style="position: fixed; width: 100%;
+top: 50%;
+left: 50%;
+-ms-transform: translate(-50%, -50%);
+transform: translate(-50%, -50%); background-color: rgb(157, 157, 157); width: 50%; padding: 10px; border-radius: 10px;">
+<h1>Settings</h1>
+Play from: <button onclick="let p = prompt('URL'); if(p){ location.search = `?src=${encodeURIComponent(p)}`;document.getElementById('c').style.display='none' } ">URL</button> <button><label for="f">File</label></button>
+<input type="file" id="f" style="display:none;" accept="video/*" onchange="url();document.getElementById('c').style.display='none'"> 
+<br><br>
+Volume: <label style="display: none;" id="_vol">?</label>  <input max="1" value="100" step="0.01" id="vol" onchange="changevol()" type="range"> 
+<br><br>
+<button onclick="v.requestFullscreen()">Play Fullscreen</button>
+
+<br><br>
+<button onclick="document.getElementById('c').style.display='none'">Cancel</button>
+<br><br>
+</div>
+</div>
+
+<div id="c" class="c">
+    <label id="t"></label>
+ <input id="r" type="range"> 
+ <label id="allt"></label>
+ <br><br>
+
+</div>
+    <video onplaying="onprog()" id="v">
+<script>
+let isPlaying = false
+const r = document.getElementById("r")
+const v = document.getElementById("v")
+
+const g = (variable) => {
+    const query = window.location.search.substring(1)
+    const vars = query.split('&')
+    for (let i = 0; i < vars.length; i++) {
+        var pair = vars[i].split('=')
+        if (decodeURIComponent(pair[0]) == variable) {
+            return decodeURIComponent(pair[1]).toLowerCase()
+        }
+    }
+}
+
+try{
+document.getElementById("v").src = g('src')
+}catch{
+alert(`Could not load video from "${g("src")}"`)
+}
+
+const toggleControls = () => {
+  if (v.hasAttribute("controls")) {
+     v.removeAttribute("controls")   
+  } else {
+     v.setAttribute("controls","controls")   
+  }
+}
+
+const changevol = () => {
+document.getElementById('_vol').innerHTML = document.getElementById('vol').value*100
+v.volume = document.getElementById('vol').value
+}
+
+v.addEventListener('error', (event) => {
+    let str = `Could not load video from "${g("src")}".`
+    document.getElementById('c').style.display = 'none'
+    if(!decodeURIComponent(g("src")).startsWith("http")) str +=  ' It appears you don\'t have a protocol in your URL (https://). Try adding one?' 
+    document.body.innerHTML = `<div style="z-index: 5; position: fixed; width: 100%; height:120vh;
+text-align: center; background: none;">
+<div id="top" style="z-index: 1000000000;"></div>
+<div style="position: fixed; width: 100%;
+top: 50%;
+left: 50%;
+-ms-transform: translate(-50%, -50%);
+transform: translate(-50%, -50%);"><div class="err"><h2>Video Load Error</h2> ${str} <br><br> <button onclick="let p = prompt('Source URL (include protocol)','${decodeURIComponent(location.search.replace("?src=",''))}'); p ? location='?src='+encodeURIComponent(p) : ''">Change source</button> </div></div></div>`
+  //  console.clear()
+}, true)
+
+if(!g('src')) location.search = '?src=' + encodeURIComponent(prompt('Source URL (include protocol)'))
+
+
+
+let i = undefined
+interval = () => {
+i = setInterval(() => {
+document.getElementById("t").innerHTML = new Date(v.currentTime * 1000).toISOString().substr(11, 8)  
+document.getElementById('allt').innerHTML = new Date(v.duration * 1000).toISOString().substr(11, 8)
+}, 100)
+}
+
+const onprog = () => {
+  console.log(r.value=v.currentTime)
+}
+
+v.onloadeddata = () => {
+r.max = v.duration
+r.value = 0
+document.getElementById('_vol').innerHTML = v.volume*100
+document.getElementById("t").innerHTML = new Date(v.currentTime * 1000).toISOString().substr(11, 8)  
+document.getElementById('allt').innerHTML = new Date(v.duration * 1000).toISOString().substr(11, 8)
+}
+v.onplay = () => { isPlaying = true; interval() }
+v.onpause = () => { isPlaying = false; clearInterval(i) }
+v.onclick = () => {isPlaying ? v.pause() : v.play()  }
+v.onExitFullScreen = () => {
+toggleControls()
+}
+document.oncontextmenu = (e) => {
+    e.preventDefault()
+   document.getElementById('c').style.display = 'block'
+  }
+  document.getElementById('c').oncontextmenu = (e) => {
+    e.preventDefault()
+   document.getElementById('c').style.display = 'none'
+  }
+
+const settime = (time) => {
+v.currentTime = time
+}
+
+while(isPlaying){
+setTimeout(() => {
+  r.value+=1
+}, 1000)
+}
+
+window.onkeypress = (e) => {
+   if (e.keyCode == 32) {
+    isPlaying ? v.pause() : v.play()
+  }
+}
+
+r.onchange = () => {
+setTimeout(() => {    
+v.currentTime = r.value
+}, 100)
+}
+
+
+const url = () => {
+v.src =  URL.createObjectURL(document.getElementById('f').files[0])
+}
+</script>
